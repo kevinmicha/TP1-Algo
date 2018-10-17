@@ -32,5 +32,5 @@
 void print_header(void);
 void print_opening_tags(void);
 void print_closing_tags(void);
-void display_metadata(void);
-void display_track_point(void);
+void display_metadata(metadata_t *metadata);
+void display_track_point(trackpt_t *trackpt);

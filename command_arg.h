@@ -16,6 +16,7 @@
 #define MAX_MONTH 12
 #define MAX_YEAR 2666
 #define MIN_YEAR 1900
+#define MIN_YEAR_STRUCT_TM 1900
 
 #define STR_ARG_HELP_1 "-h"
 #define STR_ARG_HELP_2 "--help"
@@ -40,7 +41,7 @@
 #define DEFAULT_NAME "Default"
 #define CHAR_NAME_SPACE '_'
 
-typedef enum {ST_DATA_ERR, ST_OK, ST_HELP} status_t;
+typedef enum {ST_DATA_ERR, ST_OK, ST_HELP, ST_EOF, ST_INVALID_NUMBER_ERROR, ST_NUMERICAL_ERROR} status_t;
 
 typedef struct metadata {
 	char name[MAX_STR];

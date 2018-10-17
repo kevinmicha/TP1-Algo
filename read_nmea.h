@@ -8,6 +8,9 @@
 #define CHAR_END_NMEA '*'
 #define MAX_STR_NMEA 70
 #define STR_HEX "0123456789ABCDEF"
+#define GGA_STR "GGA"
+#define GGA_CHARS 3
+#define NMEA_TYPE_OF_STATEMENT_CHARS 5
 #define HEXSTRING_NULL_FIND_INT -1
 #define HEX_DIGITS 16
 
