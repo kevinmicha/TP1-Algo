@@ -4,13 +4,17 @@
 status_t read_nmea(char (*statement)[]) { //recibe la dirección de una cadena, en la cual carga la sentencia
 
 	int c, i, cksm1, cksm2;
-	checksum = 0;
+	int checksum = 0;
+	char gga_test[] = GGA_STR;
 
 	while((c = getchar()) != CHAR_INIT_NMEA && c != EOF);
 	for(i = 0; (c = getchar()) != CHAR_END_NMEA && c != '\n' && c != EOF && c != '\0' && c != CHAR_INIT_NMEA && i < MAX_STR_NMEA; i++) {
 		(*statement)[i] = c;
 		checksum ^= c;
 	}
+	for(i = 0; i < GGA_CHARS; i++)
+		if((*statement)[i + 2] != gga_test[i])
+			return ST_DATA_ERR;
 	//cuando termina la información util del statement coloca '\0'
 	(*statement)[i] = '\0';
 
@@ -33,7 +37,6 @@ status_t read_nmea(char (*statement)[]) { //recibe la dirección de una cadena, 
 
 	return ST_OK;
 }
-
 
 
 int hexstring_2_integer(int d1, int d2) {
@@ -94,14 +97,15 @@ status_t time_of_fix(char **pos_ptr, trackpt_t *trackpt, struct tm meta_time) { 
 
 	(*pos_ptr)++; // deja el puntero listo para que lo use la proxima función.
 
-	trackpt->trackpt_time.tm_hours = hours;
-	trackpt->trackpt_time.tm_min = minutes;
-	trackpt->trackpt_time.tm_sec = seconds;
+	(trackpt->trackpt_time).tm_hours = hours;
+	(trackpt->trackpt_time).tm_min = minutes;
+	(trackpt->trackpt_time).tm_sec = seconds;
 	trackpt->trackpt_time_tm_milisec = miliseconds;
-	trackpt->trackpt_time.tm_year = meta_time.tm_year; 
-	trackpt->trackpt_time.tm_mon = meta_time.tm_mon;
-	trackpt->trackpt_time.tm_mday = meta_time.tm_mday;
-	
+	(trackpt->trackpt_time).tm_year = meta_time.tm_year; 
+	(trackpt->trackpt_time).tm_mon = meta_time.tm_mon;
+	(trackpt->trackpt_time).tm_mday = meta_time.tm_mday;
+
+	return ST_OK;
 }
 
 status_t latitude(char **pos_ptr, double *lat) { //recibe el puntero de time_of_fix

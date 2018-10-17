@@ -1,5 +1,5 @@
 ---------------------------------------------------------
-			HELP    						 
+		    			HELP    						 
 ---------------------------------------------------------
 
 LIST OF COMMAND-LINE VALID COMMANDS 
@@ -11,7 +11,8 @@ DESCRIPTION OF ARGUMENTS
 	 Show help.
 
 	[-n, --name]
-	 Insert a name. /*caracteres alfanumericos*/
+	 Insert a name. /*caracteres alfanumericos y separado
+	 por _*/
 
 	[-f, --format]
 	 Submit the date. It must be a sequence of 8 digits
@@ -35,7 +36,7 @@ DEFAULT
 	/*default para todos los argumentos*/
 	/*que pasa si usa -f 20180512 y luego -Y 2014*/
 	/*que pasa si ingresa una fecha invalida pero dentro 
-	  del rango. ej 20140231 (31 de marzo)*/
+	  del rango. ej 20140231 (31 de febrero)*/
 
 INVALID INPUTS
 
