@@ -11,11 +11,13 @@
 #define HEXSTRING_NULL_FIND_INT -1
 #define HEX_DIGITS 16
 
+#define STR_NMEA_DATA_DIGITS 10
 
 /* macros de tiempo de fix */
 #define HOURS_DIGITS 2
 #define MINUTES_DIGITS 2
-#define SECONDS_DIGITS 5
+#define SECONDS_DIGITS 2
+#define MILISECONDS_DIGITS 3
 
 /* macros de latitud y longitud */
 #define NMEA_LATITUDE_DEGREES 2
@@ -28,19 +30,12 @@
 
 /* macros de calidad de fix */
 
-#define INVALID_FIX_CHAR '0'
-#define GPX_FIX_CHAR '1'
-#define DGPS_FIX_CHAR '2'
-#define PPS_FIX_CHAR '3'
-#define RTK_FIX_CHAR '4'
-#define FLOAT_RTK_FIX_CHAR '5'
-#define ESTIMATED_FIX_CHAR '6'
-#define MANUAL_FIX_CHAR '7'
-#define SIMULATION_FIX_CHAR '8'
+#define MAX_QUALITY 8
 
 /* macros de cantidad de satelites */
 #define MAX_SAT 12
 #define MIN_SAT 0
+#define NMEA_DATA_SEPARATION_CHAR ','
 
 /* el resto */
 
@@ -56,7 +51,7 @@ En el segundo caso tiene que ver con que no respeta un rango pedido (ej: numero 
 
 typedef struct trackpt {
 	struct tm trackpt_time;
-	int trackpt_time_milisec; // miliseconds agregados!
+	int trackpt_time_tm_milisec; // miliseconds agregados!
 	double latitude;
 	double longitude;
 	fix_quality_t quality;
@@ -69,11 +64,11 @@ typedef struct trackpt {
 
 status_t read_nmea(char (*statement)[]);
 int hexstring_2_integer(int d1, int d2);
-status_t latitude(const char *statement, char **pos_ptr, statement_t *lat);
-status_t longitude(const char *statement, char **pos_ptr, stantement_t *lon);
-status_t time_of_fix(const char *statement, char **pos_ptr, struct tm *trackpt_time);
-status_t quality_of_fix(const char *statement, char **pos_ptr, trackpt_t *qual);
-status_t num_of_satellites(const char *statement, char **pos_ptr, trackpt_t *satellites);
-status_t hdop(const char *statement, char **pos_ptr, trackpt_t *hd);
-status_t elevation(const char *statement, char **pos_ptr, trackpt_t *elev);
-status_t undulation_of_geoid(const char *statement, char **pos_ptr, trackpt_t *und_of_geoid);
+status_t latitude(char **pos_ptr, double *lat);
+status_t longitude(char **pos_ptr, double *lon);
+status_t time_of_fix(char **pos_ptr, trackpt_t *trackpt, struct tm meta_time);
+status_t quality_of_fix(char **pos_ptr, fix_quality_t *qual);
+status_t num_of_satellites(char **pos_ptr, size_t *n_sat);
+status_t hdop(char **pos_ptr, double *hdop);
+status_t elevation(char **pos_ptr, double *elevation);
+status_t undulation_of_geoid(char **pos_ptr, double *undulation);

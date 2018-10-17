@@ -50,7 +50,7 @@ void display_track_point(void) { // Exactamente lo mismo que antes, trackpt_t es
 
 /*	Hay algo muy bueno que se puede hacer para no hardcodear y ademas quedaria mejor, pero NO estoy tan seguro de que sea valido, hay que preguntar.*/
 
-
+																						/* Santi me dijo que es valido!*/
 #define LAT_LON_LINE "<trkpt lat=\"%f\" lon=\"%f\">\n"
 .
 .

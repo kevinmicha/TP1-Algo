@@ -57,241 +57,207 @@ int hexstring_2_integer(int d1, int d2) {
 
 } // si está mal devuelve -1
 
-status_t time_of_fix(const char *statement, char **pos_ptr, struct tm *trackpt_time) { // pos_ptr ya viene apuntado a *statement? para que usa *statement la func?
+status_t time_of_fix(char **pos_ptr, trackpt_t *trackpt, struct tm meta_time) { // espera la direcc. de un puntero apuntado a statement
 	
-	char aux[MAX_STR]; // con 4 digitos alcanza E.
-	char *aux_ptr;
-	size_t hours, minutes, i;
-	float seconds;
+	char aux[STR_NMEA_DATA_DIGITS], *end_ptr;
+	int hours, minutes, seconds, miliseconds;
+	size_t i;
 
-
-	for(i = 0; i < HOURS_DIGITS; i++, *pos_ptr++) //se podria poner el incremento del puntero en la sig. declaración aux[i] = *((*pos_ptr)++) E.
-		aux[i] = **pos_ptr; // al final del ciclo cargar un '\0' en aux[i], de este modo cortas la cadena donde no hay mas info util. E.
-	hours = strtoul(aux, &aux_ptr, 10);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n') // solo hace falta validar el '\0' (creo) en el caso que haya cargado el '\0' en la linea anterior E.
+	for(i = 0; i < HOURS_DIGITS; i++) 
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
+	hours = strtoul(aux, &end_ptr, 10);
+	if(*end_ptr != '\0')
 		return ST_NUMERICAL_ERROR;	
 
-	for(i = 0; i < MINUTES_DIGITS; i++, *pos_ptr++) // IDEM HOURS
-		aux[i] = **pos_ptr;
-	minutes = strtoul(aux, &aux_ptr, 10);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
+	for(i = 0; i < MINUTES_DIGITS; i++)
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
+	minutes = strtoul(aux, &end_ptr, 10);
+	if(*end_ptr != '\0')
 		return ST_NUMERICAL_ERROR;	
 
-	for(i = 0; i < SECONDS_DIGITS + 1; i++, *pos_ptr++) //agrego un dígito por el punto // Esta funcion hay que separarla en dos: segundos y milisegundos. tm_sec es (int). Creo un nuevo campo en trkpt_t. E.
-		aux[i] = **pos_ptr;
-	seconds = strtof(aux, &aux_ptr);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
+	for(i = 0; i < SECONDS_DIGITS; i++)
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
+	(*pos_ptr)++; //saltea el punto de los segundos
+	seconds = strtof(aux, &end_ptr);
+	if(*end_ptr != '\0')
 		return ST_NUMERICAL_ERROR;	
 	
-	trackpt_time -> tm_hour = hours;
-	trackpt_time -> tm_min = minutes;
-	trackpt_time -> tm_sec = seconds; //Algun problema con que tm_sec vaya de 0 a 59? // imagino que el tracker tira segundos en ese rango. E.
+	for(i = 0; i < MILISECONDS_DIGITS; i++)
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
+	miliseconds = strtoul(aux, &end_ptr, 10);
+	if(*end_ptr != '\0')
+		return ST_NUMERICAL_ERROR;
 
-	/* Importante: falta meter en la estructura dia, mes y año */
-	
+	(*pos_ptr)++; // deja el puntero listo para que lo use la proxima función.
+
+	trackpt->trackpt_time.tm_hours = hours;
+	trackpt->trackpt_time.tm_min = minutes;
+	trackpt->trackpt_time.tm_sec = seconds;
+	trackpt->trackpt_time_tm_milisec = miliseconds;
+	trackpt->trackpt_time.tm_year = meta_time.tm_year; 
+	trackpt->trackpt_time.tm_mon = meta_time.tm_mon;
+	trackpt->trackpt_time.tm_mday = meta_time.tm_mday;
 	
 }
 
-status_t latitude(const char *statement, char **pos_ptr, trackpt_t *lat) { // pos_ptr quedo en una coma creo, en la func anterior habria que aumentarlo, o aca. No entiendo para que usa *statement E.
-															// 	     ↑   *lat es la estructura? Creo que esta bien (seguro lo esta), pero el nombre es confuso. desde lat podes acceder a todo..time, long, nsat, etc. E. 
-	size_t degrees, i;
+status_t latitude(char **pos_ptr, double *lat) { //recibe el puntero de time_of_fix
+
+	char aux[STR_NMEA_DATA_DIGITS], *end_ptr;
+	size_t degrees, i, south_flag = 1;
 	float minutes;
-	char *aux_ptr;
-	char aux[MAX_STR]; // con 4 digitos alcanza E.
 
-	// validar punteros si fuera necesario. No lo pongo porque capaz ya está validado en otra parte
+	for(i = 0; i < NMEA_LATITUDE_DEGREES; i++)
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
 
-	for(i = 0; i < NMEA_LATITUDE_DEGREES; i++, *pos_ptr++) // al final de estos ciclo recomiendo poner un '\0' E.
-		aux[i] = **pos_ptr;
-
-	degrees = strtoul(aux, &aux_ptr, 10);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
+	degrees = strtoul(aux, &end_ptr, 10);
+	if(*end_ptr != '\0')
 		return ST_NUMERICAL_ERROR;
 
-	for(i = 0; i < NMEA_LATITUDE_MINUTES + 1; i++, *pos_ptr++) // sumo uno por el punto 
-		aux[i] = **pos_ptr;
+	for(i = 0; i < NMEA_LATITUDE_MINUTES + 1; i++) // sumo uno por el punto 
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
 
-	/* Reutilizo cadena porque considero que la sentencia viene según indica el código NMEA. Sino tendría que considerar el caso en el que 
-	CARECTERES_LATITUD_GRADOS sea mayor que CARACTERES_LATITUD_MINUTOS */
-
-	minutes = strtof(aux, &aux_ptr);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
+	minutes = strtof(aux, &end_ptr);
+	if(*end_ptr != '\0')
 		return ST_NUMERICAL_ERROR;
-
-	*pos_ptr++;
-	*pos_ptr++; // creo que deberia avanzar 1 solo, termino en la coma. se puede inicializar una variable signo = 1, if(South){signo = -1}, y asignas una sola vez multiplicando por signo E.
-
-	if(**pos_ptr == SOUTH_CHAR)
-		lat -> latitude = (-1)*(degrees + minutes/CONVERSION_FACTOR_MINUTES); //TODO esto hay que ponerlo más lindo
-	else 
-		lat -> latitude = (degrees + minutes/CONVERSION_FACTOR_MINUTES);
-		
-
-	return ST_OK;
-
-}
-
-
-status_t longitude(const char *statement, char **pos_ptr, trackpt_t *lon) { 
 	
-	size_t degrees, i;
+	if(*(++(*pos_ptr)) == SOUTH_CHAR)
+		south_flag = -1;
+
+	*pos_ptr ++;
+	
+	*lat = south_flag * (degrees + minutes / CONVERSION_FACTOR_MINUTES);
+
+	*pos_ptr ++; //deja el puntero preparado para la proxima funcion
+
+	return ST_OK;
+}
+
+
+status_t longitude(char **pos_ptr, double *lon) {
+
+	char aux[STR_NMEA_DATA_DIGITS], *end_ptr;
+	size_t degrees, i, west_flag = 1;
 	float minutes;
-	char *aux_ptr;
-	char aux[MAX_STR];
 
-	// validar punteros si fuera necesario. No lo pongo porque capaz ya está validado en otra parte
+	for(i = 0; i < NMEA_LONGITUD_DEGREES; i++)
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
 
-	for(i = 0; i < NMEA_LONGITUDE_DEGREES; i++, *pos_ptr++) 
-		aux[i] = **pos_ptr;
-
-	degrees = strtoul(aux, &aux_ptr, 10);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
+	degrees = strtoul(aux, &end_ptr, 10);
+	if(*end_ptr != '\0')
 		return ST_NUMERICAL_ERROR;
 
-	for(i = 0; i < NMEA_LONGITUDE_MINUTES + 1; i++, *pos_ptr++) // sumo uno por el punto
-		aux[i] = **pos_ptr;
+	for(i = 0; i < NMEA_LONGITUD_MINUTES + 1; i++) // sumo uno por el punto 
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
 
-	/* Reutilizo cadena porque considero que la sentencia viene según indica el código NMEA. Sino tendría que considerar el caso en el que 
-	CARECTERES_LATITUD_GRADOS sea mayor que CARACTERES_LATITUD_MINUTOS */
-
-	minutes = strtof(aux, &aux_ptr);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
+	minutes = strtof(aux, &end_ptr, 10);
+	if(*end_ptr != '\0')
 		return ST_NUMERICAL_ERROR;
+	
+	if(*(++(*pos_ptr)) == WEST_CHAR)
+		west_flag = -1;
 
-	*pos_ptr++;
-	*pos_ptr++;
+	*pos_ptr ++;
+	
+	*lon = west_flag * (degrees + minutes / CONVERSION_FACTOR_MINUTES);
 
-	if(**pos_ptr == WEST_CHAR)
-		lon -> longitude = (-1)*(degrees + minutes/CONVERSION_FACTOR_MINUTES); //TODO esto hay que ponerlo más lindo
-	else 
-		lon -> longitude = (degrees + minutes/CONVERSION_FACTOR_MINUTES);
-
-	return ST_OK;
-
-}
-
-status_t quality_of_fix(const char *statement, char **pos_ptr, trackpt_t *qual) { // creo que el puntero termino en una coma E.
-																		//  ↑  como antes, me parece raro quality como trackpt_t E.
-	fix_quality_t option; // hay una mejor manera?	// No se como lo quiere pato...el switch es horrible pero me parece que quiere esto. E.
-
-	switch(**pos_ptr) { // cargar el dato de pos_ptr en una variable y avanzar pos_ptr para la prox func. E.
-		
-		case INVALID_FIX_CHAR:
-			option = INVALID_FIX;
-			break;
-		case GPX_FIX_CHAR:
-			option = GPX_FIX;
-			break;
-		case DGPS_FIX_CHAR:
-			option = DGPS_FIX;
-			break;
-		case PPS_FIX_CHAR:
-			option = PPS_FIX;
-			break;
-		case RTK_FIX_CHAR:
-			option = RTK_FIX;
-			break;
-		case FLOAT_RTK_FIX_CHAR:
-			option = FLOAT_RTK_FIX;
-			break;
-		case ESTIMATED_FIX_CHAR:
-			option = ESTIMATED_FIX;
-			break;
-		case MANUAL_FIX_CHAR:
-			option = MANUAL_FIX;
-			break;
-		case SIMULATION_FIX_CHAR:
-			option = SIMULATION_FIX;
-			break;
-		default:
-			return ST_INVALID_NUMBER_ERROR;
-	}
-		
-	qual -> quality = option;
+	*pos_ptr ++; // Deja el puntero en el siguiente dato a leer
 
 	return ST_OK;
-		
 }
 
 
-status_t num_of_satellites(const char *statement, char **pos_ptr, trackpt_t *satellites) {
+status_t quality_of_fix(char **pos_ptr, fix_quality_t *qual) {
 
-	if(**pos_ptr < MIN_SAT || **pos_ptr > MAX_SAT) // ojo que el numero de satelites puede ser 12, es decir dos chars..hay que leer ambas y hacer strto- E.
+	fix_quality_t option;
+
+	if(! isdigit(option = *((*pos_ptr)++)))
+		return ST_INVALID_NUMBER_ERROR;
+	if(option > MAX_QUALITY)
+		return ST_INVALID_NUMBER_ERROR;
+		
+	*qual = option;
+
+	*pos_ptr ++; // Deja el puntero en el siguiente dato a leer
+
+	return ST_OK;		
+}
+
+
+status_t num_of_satellites(char **pos_ptr, size_t *n_sat) {
+
+	char aux[STR_NMEA_DATA_DIGITS], *end_ptr;
+
+	for(i = 0; **pos_ptr != NMEA_DATA_SEPARATION_CHAR; i++)
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
+
+	*n_sat = strtoul(aux, &end_ptr, 10);
+	if(end_ptr != '\0')
+		return ST_INVALID_NUMBER_ERROR;
+	if(*n_sat < MIN_SAT || *n_sat > MAX_SAT)
 		return ST_INVALID_NUMBER_ERROR;
 
-	satellites -> n_sat = **pos_ptr;
+	*pos_ptr ++; // Deja el puntero en el siguiente dato a leer
 
 	return ST_OK;
-		
 }
 
-status_t num_of_satellites(const char *statement, char **pos_ptr, trackpt_t *satellites) { // Esta dos veces ?
+status_t hdop(char **pos_ptr, double *hdop) {
+	
+	size_t i;
+	char aux[STR_NMEA_DATA_DIGITS], *end_ptr;
 
-	if(**pos_ptr < MIN_SAT || **pos_ptr > MAX_SAT)
-		return ST_INVALID_NUMBER_ERROR;
+	for(i = 0; i < HDOP_DIGITS + 1; i++) 
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
 
-	satellites -> n_sat = **pos_ptr;
+	*hdop = strtof(aux, &end_ptr);
+	if(*end_ptr != '\0')
+		return ST_NUMERICAL_ERROR;
+
+	*pos_ptr ++; // Deja el puntero en el siguiente dato a leer
 
 	return ST_OK;
-		
 }
 
-status_t hdop(const char *statement, char **pos_ptr, trackpt_t *hd) {
+status_t elevation(char **pos_ptr, double *elevation) {
 	
 	size_t i;
-	float hdop;
-	char *aux_ptr;
-	char aux[MAX_STR]; // es muy grande esto.
+	char aux[MAX_STR], *end_ptr;
 
-	// validar punteros si fuera necesario. No lo pongo porque capaz ya está validado en otra parte
+	for(i = 0; i < ELEVATION_DIGITS + 1; i++) 
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
 
-	for(i = 0; i < HDOP_DIGITS + 1; i++, *pos_ptr++) // si despues del ciclo no agrega el '\0' (aux[] fue creado con 600 chars y puede tener basura) no hay chance de que lea bien hasta un '\0' E.
-		aux[i] = **pos_ptr;
-	hdop = strtof(aux, &aux_ptr);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
-		return ST_NUMERICAL_ERROR;	
+	*elevation = strtof(aux, &end_ptr);
+	if(*end_ptr != '\0')
+		return ST_NUMERICAL_ERROR;
 
-	hd -> hdop = hdop;
-	
+	*pos_ptr += 3; // ######HARDCODE, SALTEA LAS UNIDADES.
 
+	return ST_OK;
 }
 
-status_t elevation(const char *statement, char **pos_ptr, trackpt_t *elev) { // los comentarios se repiten para las funciones que restan E.
+status_t undulation_of_geoid(char **pos_ptr, double *undulation) {
 	
 	size_t i;
-	float elevation;
-	char *aux_ptr;
-	char aux[MAX_STR];
+	char aux[MAX_STR], *aux_ptr;
 
-	// validar punteros si fuera necesario. No lo pongo porque capaz ya está validado en otra parte
+	for(i = 0; i < UNDULATION_OF_GEOID_DIGITS + 1; i++) 
+		aux[i] = *((*pos_ptr)++);
+	aux[i] = '\0';
 
-	for(i = 0; i < ELEVATION_DIGITS + 1; i++, *pos_ptr++) 
-		aux[i] = **pos_ptr;
-	elevation = strtof(aux, &aux_ptr);
+	*undulation = strtof(aux, &aux_ptr);
 	if(*aux_ptr != '\0' && *aux_ptr != '\n')
-		return ST_NUMERICAL_ERROR;	
+		return ST_NUMERICAL_ERROR;
 
-	elev -> elevation = elevation;
-	
-
-}
-
-status_t undulation_of_geoid(const char *statement, char **pos_ptr, trackpt_t *und_of_geoid) {
-	
-	size_t i;
-	float undulation;
-	char *aux_ptr;
-	char aux[MAX_STR];
-
-	// validar punteros si fuera necesario. No lo pongo porque capaz ya está validado en otra parte
-
-	for(i = 0; i < UNDULATION_OF_GEOID_DIGITS + 1; i++, *pos_ptr++) 
-		aux[i] = **pos_ptr;
-	undulation = strtof(aux, &aux_ptr);
-	if(*aux_ptr != '\0' && *aux_ptr != '\n')
-		return ST_NUMERICAL_ERROR;	
-
-	und_of_geoid -> undulation_of_geoid = undulation;
-	
-
+	return ST_OK;
 }
