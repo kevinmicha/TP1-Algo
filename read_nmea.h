@@ -3,7 +3,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <time.h>
-
+/*[1] Macros de read_nmea.*/
 #define CHAR_INIT_NMEA '$'
 #define CHAR_END_NMEA '*'
 #define MAX_STR_NMEA 70
@@ -13,16 +13,15 @@
 #define NMEA_TYPE_OF_STATEMENT_CHARS 5
 #define HEXSTRING_NULL_FIND_INT -1
 #define HEX_DIGITS 16
-
 #define STR_NMEA_DATA_DIGITS 10
 
-/* macros de tiempo de fix */
+/*[2] Macros de tiempo de fix.*/
 #define HOURS_DIGITS 2
 #define MINUTES_DIGITS 2
 #define SECONDS_DIGITS 2
 #define MILISECONDS_DIGITS 3
 
-/* macros de latitud y longitud */
+/*[3] Macros de latitud y longitud.*/
 #define NMEA_LATITUDE_DEGREES 2
 #define NMEA_LATITUDE_MINUTES 5
 #define NMEA_LONGITUDE_DEGREES 3
@@ -31,30 +30,30 @@
 #define SOUTH_CHAR 'S'
 #define WEST_CHAR 'W'
 
-/* macros de calidad de fix */
-
+/*[4] Macros de calidad de fix.*/
 #define MAX_QUALITY 8
+#define ZERO_ASCII_VALUE 48
 
-/* macros de cantidad de satelites */
+/*[5] Macros de cantidad de satelites.*/
 #define MAX_SAT 12
 #define MIN_SAT 0
 #define NMEA_DATA_SEPARATION_CHAR ','
 
-/* el resto */
+/*[6] Otras.*/
 
 #define HDOP_DIGITS 2
 #define ELEVATION_DIGITS 2
 #define UNDULATION_OF_GEOID_DIGITS 2
 
-typedef enum {ST_DAT_ERR, ST_OK, ST_HELP, ST_EOF, ST_INVALID_NUMBER_ERROR, ST_NUMERICAL_ERROR} status_t;
+typedef enum {ST_DATA_ERR, ST_OK, ST_HELP, ST_EOF, ST_INVALID_NUMBER_ERROR, ST_NUMERICAL_ERROR} status_t;
 typedef enum {INVALID_FIX, GPS_FIX, DGPS_FIX, PPS_FIX, RTK_FIX, FLOAT_RTK_FIX, ESTIMATED_FIX, MANUAL_FIX, SIMULATION_FIX} fix_quality_t;
 
-/* La diferencia entre ST_NUMERICAL_ERROR y ST_INVALID_NUMBER_ERROR es que en el primer caso, por ej, se da un float en vez de un int (tipo invalido) 
+/*[7] La diferencia entre ST_NUMERICAL_ERROR y ST_INVALID_NUMBER_ERROR es que en el primer caso, por ej, se da un float en vez de un int (tipo invalido) 
 En el segundo caso tiene que ver con que no respeta un rango pedido (ej: numero de satelites de 0 a 12) */
 
 typedef struct trackpt {
 	struct tm trackpt_time;
-	int trackpt_time_tm_milisec; // miliseconds agregados!
+	int trackpt_time_tm_milisec;
 	double latitude;
 	double longitude;
 	fix_quality_t quality;
